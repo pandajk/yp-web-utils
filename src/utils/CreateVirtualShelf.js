@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-03-05 10:50:10
+ * @Last Modified time: 2019-03-05 11:20:42
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -150,12 +150,12 @@ class VirtualShelf {
       let item = ColSpan1.shift();
 
       if (!item) {
-        console.log('没有 ColSpan=1 的商品了');
+        // console.log('没有 ColSpan=1 的商品了');
         item = ColSpan2.shift();
       }
 
       if (!item) {
-        console.log('没有商品了');
+        // console.log('没有商品了');
         break; // 没有商品了
       }
 
