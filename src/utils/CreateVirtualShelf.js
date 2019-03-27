@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-03-05 11:20:42
+ * @Last Modified time: 2019-03-27 15:02:45
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -146,33 +146,47 @@ class VirtualShelf {
       return a.ImageHeight - b.ImageHeight
     });
 
-    while (stack--) {
-      let item = ColSpan1.shift();
+    const ColSpanLength = [ColSpan1.length, ColSpan2.length];
+    let ColSpanCount = [new Array(ColSpanLength[0]).fill(repeat), new Array(ColSpanLength[1]).fill(repeat)];
 
-      if (!item) {
-        // console.log('没有 ColSpan=1 的商品了');
-        item = ColSpan2.shift();
+    let indicator = [0, 0];
+    let loop = 0;
+
+    const fillRemainderSpace = () => {
+      if (overflow <= 0) return;
+      loop += 1;
+      let idx = loop % 2;
+      let ColSpan = idx + 1; // idx = 0, ColSpan = 1; idx = 1, ColSpan = 2
+
+
+      // 如果剩余空间不小于商品格数 && 指示器小于长度
+      // 时，表示可添加
+      if (overflow >= ColSpan && indicator[idx] < ColSpanLength[idx]) {
+        ColSpanCount[idx][indicator[idx]] += 1;
+        indicator[idx] += 1;
+        overflow -= ColSpan;
       }
 
-      if (!item) {
-        // console.log('没有商品了');
-        break; // 没有商品了
-      }
-
-      // repeat push
-      let tmp_repeat = repeat;
-
-      while (tmp_repeat--) {
-        _pushItem(item);
-      }
-
-      if (overflow > 0) {
-        _pushItem(item);
-        overflow -= item.ColSpan;
-      }
+      fillRemainderSpace();
     }
 
-    function _pushItem(elem) {
+    fillRemainderSpace();
+
+    // 反向计算
+    // 从高到低，从下往上
+    const ColSpan = [ColSpan2, ColSpan1];
+
+    ColSpanCount.reverse().map((group, i) => {
+      const ColSpanReverse = ColSpan[i].reverse();
+      group.reverse().map((count, k) => {
+        for (let time = 0; time < count; time++) {
+          _pushItem(ColSpanReverse[k])
+        }
+
+      })
+    })
+
+    function _pushItem(elem, repeat) {
       for (let row = 0; row < PAGE_ROW; row++) {
         if (columns[row] < ROW_SIZE) {
           screen[row].push(Object.assign({}, elem, {
@@ -184,22 +198,21 @@ class VirtualShelf {
         }
       }
     }
+
+    // 反转商品排列
+    screen.reverse().map(row => {
+      row.reverse()
+    });
+
     return screen;
   }
-
 }
-
-
-
 
 export default async function CreateVirtualShelf(cargolist, TemplateID = 1) {
 
   return new VirtualShelf(cargolist, TemplateID).init();
 
 }
-
-
-
 
 function setImageInfo(el, image) {
   el['ImageWidth'] = 95 * image.width / 750 / 0.4;
