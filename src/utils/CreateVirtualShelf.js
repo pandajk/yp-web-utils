@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-03-27 15:02:45
+ * @Last Modified time: 2019-07-01 17:02:22
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -86,9 +86,13 @@ class VirtualShelf {
           resolve();
           // _finally.call(this);
         }).catch((err) => {
-          el.ImageFixWidthUrl = '';
-          console.log('reject', err);
-          reject();
+          if(el.ColSpan == 2){
+            el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_2.png';
+          }else{
+            el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_1.png';
+          }
+          console.log('reject-1', err);
+          resolve(); // reject
           // _finally.call(this);
         });
       });
