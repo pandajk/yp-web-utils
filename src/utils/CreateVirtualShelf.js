@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-07-01 17:02:22
+ * @Last Modified time: 2019-07-02 14:42:14
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -109,15 +109,54 @@ class VirtualShelf {
   // 对货道商品进行分页
   pagingProducts({ ProductList, ColTotal, ColSpanArray }) {
     const screens = Math.ceil(ColTotal / 30);
+    
+    const { PRESET_TEMPLATE_CONFIG, TemplateID } = this;
+    const { PAGE_SIZE, PAGE_ROW, ROW_SIZE } = PRESET_TEMPLATE_CONFIG[TemplateID];
 
-    const ColSpan1Size = Math.ceil(ColSpanArray[1].length / screens);
-    const ColSpan2Size = Math.ceil(ColSpanArray[2].length / screens);
+    const cloneColSpan = [[...ColSpanArray[1]],[...ColSpanArray[2]]]
+
     const layout = (new Array(screens)).fill().map((el, page) => {
-      const ColSpan1 = ColSpanArray[1].slice(page * ColSpan1Size, (page + 1) * ColSpan1Size);
-      const ColSpan2 = ColSpanArray[2].slice(page * ColSpan2Size, (page + 1) * ColSpan2Size);
-      const ColTotal = ColSpan1.length + ColSpan2.length * 2;
+      let pageColTotal = 0
+
+      let size = PAGE_SIZE * 2
+
+      const ColSpan1 = []
+      const ColSpan2 = []
+
+      while (size -- > 0) {
+        if(pageColTotal > PAGE_SIZE) break;
+
+        const span = size%2;
+
+        let tmpSpanArray = cloneColSpan[span];
+
+        if(tmpSpanArray.length>0){
+          let tmpObject = tmpSpanArray.shift()
+          if(span == 0){
+
+            ColSpan1.push(tmpObject)
+            pageColTotal += tmpObject.ColSpan
+          
+          }else if(span == 1){
+
+            if(pageColTotal + tmpObject.ColSpan > PAGE_SIZE) {
+              console.log("while",size,ColSpan1);
+              tmpSpanArray.unshift(tmpObject)
+              continue
+            }else{
+              ColSpan2.push(tmpObject)
+              pageColTotal += tmpObject.ColSpan
+            }
+            
+          }
+          
+        }
+
+      }
+
+
       return this.pileUpProducts({
-        ColTotal,
+        ColTotal: pageColTotal,
         ColSpanArray: [null, ColSpan1, ColSpan2]
       });
     });
@@ -127,6 +166,7 @@ class VirtualShelf {
   }
   // 堆砌每页的商品
   pileUpProducts({ ColTotal, ColSpanArray }) {
+    console.log("pileUpProducts",ColTotal, ColSpanArray);
 
     const { PRESET_TEMPLATE_CONFIG, TemplateID } = this;
     const { PAGE_SIZE, PAGE_ROW, ROW_SIZE } = PRESET_TEMPLATE_CONFIG[TemplateID];
@@ -158,10 +198,11 @@ class VirtualShelf {
 
     const fillRemainderSpace = () => {
       if (overflow <= 0) return;
+      console.log("overflow",overflow);
       loop += 1;
       let idx = loop % 2;
       let ColSpan = idx + 1; // idx = 0, ColSpan = 1; idx = 1, ColSpan = 2
-
+      // return
 
       // 如果剩余空间不小于商品格数 && 指示器小于长度
       // 时，表示可添加
