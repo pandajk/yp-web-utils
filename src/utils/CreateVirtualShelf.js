@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-07-02 14:42:14
+ * @Last Modified time: 2019-07-03 10:59:23
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -44,7 +44,7 @@ class VirtualShelf {
 
     if (this.TemplateID === 3) {
       ProductLayout.push({
-        title: `自动`,
+        title: `货架`,
         layout: [Products.ProductList]
       });
     } else {
@@ -52,7 +52,7 @@ class VirtualShelf {
       const layout = this.pagingProducts(Products);
       layout.map((el, i) => {
         ProductLayout.push({
-          title: `自动${i+1}`,
+          title: `货架${i+1}`,
           layout: el
         })
       });
@@ -109,6 +109,8 @@ class VirtualShelf {
   // 对货道商品进行分页
   pagingProducts({ ProductList, ColTotal, ColSpanArray }) {
     const screens = Math.ceil(ColTotal / 30);
+
+    console.log('pagingProducts', ColTotal, screens);
     
     const { PRESET_TEMPLATE_CONFIG, TemplateID } = this;
     const { PAGE_SIZE, PAGE_ROW, ROW_SIZE } = PRESET_TEMPLATE_CONFIG[TemplateID];
@@ -123,8 +125,9 @@ class VirtualShelf {
       const ColSpan1 = []
       const ColSpan2 = []
 
-      while (size -- > 0) {
-        if(pageColTotal > PAGE_SIZE) break;
+      while (size-- > 0) {
+
+        if(pageColTotal >= PAGE_SIZE) break;
 
         const span = size%2;
 
@@ -140,20 +143,15 @@ class VirtualShelf {
           }else if(span == 1){
 
             if(pageColTotal + tmpObject.ColSpan > PAGE_SIZE) {
-              console.log("while",size,ColSpan1);
               tmpSpanArray.unshift(tmpObject)
               continue
             }else{
               ColSpan2.push(tmpObject)
               pageColTotal += tmpObject.ColSpan
-            }
-            
+            } 
           }
-          
         }
-
       }
-
 
       return this.pileUpProducts({
         ColTotal: pageColTotal,
@@ -198,6 +196,8 @@ class VirtualShelf {
 
     const fillRemainderSpace = () => {
       if (overflow <= 0) return;
+
+      if(isNaN(overflow)) return;
       console.log("overflow",overflow);
       loop += 1;
       let idx = loop % 2;
