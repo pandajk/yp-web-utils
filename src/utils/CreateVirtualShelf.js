@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-07-03 10:59:23
+ * @Last Modified time: 2019-07-04 11:28:19
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -93,7 +93,6 @@ class VirtualShelf {
           }
           console.log('reject-1', err);
           resolve(); // reject
-          // _finally.call(this);
         });
       });
     });
@@ -103,68 +102,84 @@ class VirtualShelf {
           resolve({ ProductList, ColTotal, ColSpanArray });
         });
     })
-    // return { ProductList, ColTotal, ColSpanArray };
   }
 
   // 对货道商品进行分页
   pagingProducts({ ProductList, ColTotal, ColSpanArray }) {
-    const screens = Math.ceil(ColTotal / 30);
-
-    console.log('pagingProducts', ColTotal, screens);
-    
     const { PRESET_TEMPLATE_CONFIG, TemplateID } = this;
     const { PAGE_SIZE, PAGE_ROW, ROW_SIZE } = PRESET_TEMPLATE_CONFIG[TemplateID];
 
-    const cloneColSpan = [[...ColSpanArray[1]],[...ColSpanArray[2]]]
+    const screens = Math.ceil(ColTotal / PAGE_SIZE);
 
-    const layout = (new Array(screens)).fill().map((el, page) => {
-      let pageColTotal = 0
+    const remainderPercent = ColTotal % PAGE_SIZE / PAGE_SIZE
 
-      let size = PAGE_SIZE * 2
+    if(1 && remainderPercent < 0.5 && remainderPercent > 0){
+      const ColSpan1Size = Math.ceil(ColSpanArray[1].length / screens);
+      const ColSpan2Size = Math.ceil(ColSpanArray[2].length / screens);
+      const layout = (new Array(screens)).fill().map((el, page) => {
+        const ColSpan1 = ColSpanArray[1].slice(page * ColSpan1Size, (page + 1) * ColSpan1Size);
+        const ColSpan2 = ColSpanArray[2].slice(page * ColSpan2Size, (page + 1) * ColSpan2Size);
+        const ColTotal = ColSpan1.length + ColSpan2.length * 2;
+        return this.pileUpProducts({
+          ColTotal,
+          ColSpanArray: [null, ColSpan1, ColSpan2]
+        });
+      });
 
-      const ColSpan1 = []
-      const ColSpan2 = []
+      return layout;
+    }else{
 
-      while (size-- > 0) {
+      const cloneColSpan = [[...ColSpanArray[1]],[...ColSpanArray[2]]]
 
-        if(pageColTotal >= PAGE_SIZE) break;
+      const layout = (new Array(screens)).fill().map((el, page) => {
+        let pageColTotal = 0
 
-        const span = size%2;
+        let size = PAGE_SIZE * 2
 
-        let tmpSpanArray = cloneColSpan[span];
+        const ColSpan1 = []
+        const ColSpan2 = []
 
-        if(tmpSpanArray.length>0){
-          let tmpObject = tmpSpanArray.shift()
-          if(span == 0){
+        while (size-- > 0) {
 
-            ColSpan1.push(tmpObject)
-            pageColTotal += tmpObject.ColSpan
-          
-          }else if(span == 1){
+          if(pageColTotal >= PAGE_SIZE) break;
 
-            if(pageColTotal + tmpObject.ColSpan > PAGE_SIZE) {
-              tmpSpanArray.unshift(tmpObject)
-              continue
-            }else{
-              ColSpan2.push(tmpObject)
+          const span = size%2;
+
+          let tmpSpanArray = cloneColSpan[span];
+
+          if(tmpSpanArray.length>0){
+            let tmpObject = tmpSpanArray.shift()
+            if(span == 0){
+
+              ColSpan1.push(tmpObject)
               pageColTotal += tmpObject.ColSpan
-            } 
+            
+            }else if(span == 1){
+
+              if(pageColTotal + tmpObject.ColSpan > PAGE_SIZE) {
+                tmpSpanArray.unshift(tmpObject)
+                continue
+              }else{
+                ColSpan2.push(tmpObject)
+                pageColTotal += tmpObject.ColSpan
+              } 
+            }
           }
         }
-      }
 
-      return this.pileUpProducts({
-        ColTotal: pageColTotal,
-        ColSpanArray: [null, ColSpan1, ColSpan2]
+        return this.pileUpProducts({
+          ColTotal: pageColTotal,
+          ColSpanArray: [null, ColSpan1, ColSpan2]
+        });
       });
-    });
 
-    return layout;
+      return layout;
+    }
+
 
   }
   // 堆砌每页的商品
   pileUpProducts({ ColTotal, ColSpanArray }) {
-    console.log("pileUpProducts",ColTotal, ColSpanArray);
 
     const { PRESET_TEMPLATE_CONFIG, TemplateID } = this;
     const { PAGE_SIZE, PAGE_ROW, ROW_SIZE } = PRESET_TEMPLATE_CONFIG[TemplateID];
@@ -198,7 +213,6 @@ class VirtualShelf {
       if (overflow <= 0) return;
 
       if(isNaN(overflow)) return;
-      console.log("overflow",overflow);
       loop += 1;
       let idx = loop % 2;
       let ColSpan = idx + 1; // idx = 0, ColSpan = 1; idx = 1, ColSpan = 2
