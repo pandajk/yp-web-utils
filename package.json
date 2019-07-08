@@ -1,6 +1,6 @@
 {
   "name": "yp-web-utils",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "utility for yp web project",
   "main": "dist/index.js",
   "repository": "git@github.com:pandajk/yp-web-utils.git",
