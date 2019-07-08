@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-07-04 11:28:19
+ * @Last Modified time: 2019-07-08 17:40:18
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -113,7 +113,7 @@ class VirtualShelf {
 
     const remainderPercent = ColTotal % PAGE_SIZE / PAGE_SIZE
 
-    if(1 && remainderPercent < 0.5 && remainderPercent > 0){
+    if(remainderPercent < 0.5 && remainderPercent > 0){
       const ColSpan1Size = Math.ceil(ColSpanArray[1].length / screens);
       const ColSpan2Size = Math.ceil(ColSpanArray[2].length / screens);
       const layout = (new Array(screens)).fill().map((el, page) => {
