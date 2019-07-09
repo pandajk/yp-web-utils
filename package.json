@@ -1,13 +1,13 @@
 {
   "name": "yp-web-utils",
-  "version": "1.0.9",
+  "version": "1.0.8",
   "description": "utility for yp web project",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "repository": "git@github.com:pandajk/yp-web-utils.git",
   "author": "PandaJ",
   "license": "MIT",
   "private": false,
-  "module": "src/index.js",
+  "module": "dist/index.js",
   "homepage": "https://github.com/pandajk/yp-web-utils",
   "files": [
     "dist"
