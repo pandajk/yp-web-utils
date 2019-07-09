@@ -2,7 +2,7 @@
  * @Author: PandaJ
  * @Date:   2019-03-04 14:59:43
  * @Last Modified by:   PandaJ
- * @Last Modified time: 2019-07-08 17:40:18
+ * @Last Modified time: 2019-07-09 15:48:55
  */
 
 import ImagePreloader from './ImagePreloader.js';
@@ -57,6 +57,7 @@ class VirtualShelf {
         })
       });
     }
+    console.log(ProductLayout);
     return ProductLayout;
   }
 
@@ -76,7 +77,11 @@ class VirtualShelf {
 
     const loaders = ProductList.map(el => {
       ColTotal += el.ColSpan;
-      ColSpanArray[el.ColSpan].push(el);
+
+      if(ColSpanArray[el.ColSpan]){
+        ColSpanArray[el.ColSpan].push(el)
+      }
+
       return new Promise((resolve, reject) => {
         const loader = new ImagePreloader(el.ImageFixWidthUrl, {
           suffix: '?x-oss-process=image/resize,p_1',
@@ -86,16 +91,18 @@ class VirtualShelf {
           resolve();
           // _finally.call(this);
         }).catch((err) => {
-          if(el.ColSpan == 2){
-            el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_2.png';
-          }else{
-            el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_1.png';
-          }
+          // if(el.ColSpan == 2){
+          //   el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_2.png';
+          // }else{
+          //   el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_1.png';
+          // }
+          el.ImageFixWidthUrl = '';
           console.log('reject-1', err);
           resolve(); // reject
         });
       });
     });
+
     return new Promise(resolve => {
       Promise.all(loaders)
         .then(() => {
@@ -113,70 +120,36 @@ class VirtualShelf {
 
     const remainderPercent = ColTotal % PAGE_SIZE / PAGE_SIZE
 
-    if(remainderPercent < 0.5 && remainderPercent > 0){
-      const ColSpan1Size = Math.ceil(ColSpanArray[1].length / screens);
-      const ColSpan2Size = Math.ceil(ColSpanArray[2].length / screens);
-      const layout = (new Array(screens)).fill().map((el, page) => {
-        const ColSpan1 = ColSpanArray[1].slice(page * ColSpan1Size, (page + 1) * ColSpan1Size);
-        const ColSpan2 = ColSpanArray[2].slice(page * ColSpan2Size, (page + 1) * ColSpan2Size);
-        const ColTotal = ColSpan1.length + ColSpan2.length * 2;
-        return this.pileUpProducts({
-          ColTotal,
-          ColSpanArray: [null, ColSpan1, ColSpan2]
-        });
+
+    const ColSpan1Size = Math.ceil(ColSpanArray[1].length / screens);
+    const ColSpan2Size = Math.ceil(ColSpanArray[2].length / screens);
+
+    let overflow = 0
+
+    const layout = (new Array(screens)).fill().map((el, page) => {
+      let ColSpan2 = [];
+      let ColSpan1 = [];
+
+      // 分屏，单页可能超过限定 PAGE_SIZE
+      if(ColSpan1Size + ColSpan2Size * 2 > PAGE_SIZE){
+          ColSpan2 = ColSpanArray[2].splice(0, ColSpan2Size);
+          ColSpan1 = ColSpanArray[1].splice(0, PAGE_SIZE - ColSpan2.length * 2);
+          
+          overflow = ColTotal - PAGE_SIZE
+      }else{
+        ColSpan2 = ColSpanArray[2].splice(0, ColSpan2Size);
+        ColSpan1 = ColSpanArray[1].splice(0, ColSpan1Size);
+      }
+
+      ColTotal = ColSpan1.length + ColSpan2.length * 2
+
+      return this.pileUpProducts({
+        ColTotal,
+        ColSpanArray: [null, ColSpan1, ColSpan2]
       });
+    });
 
-      return layout;
-    }else{
-
-      const cloneColSpan = [[...ColSpanArray[1]],[...ColSpanArray[2]]]
-
-      const layout = (new Array(screens)).fill().map((el, page) => {
-        let pageColTotal = 0
-
-        let size = PAGE_SIZE * 2
-
-        const ColSpan1 = []
-        const ColSpan2 = []
-
-        while (size-- > 0) {
-
-          if(pageColTotal >= PAGE_SIZE) break;
-
-          const span = size%2;
-
-          let tmpSpanArray = cloneColSpan[span];
-
-          if(tmpSpanArray.length>0){
-            let tmpObject = tmpSpanArray.shift()
-            if(span == 0){
-
-              ColSpan1.push(tmpObject)
-              pageColTotal += tmpObject.ColSpan
-            
-            }else if(span == 1){
-
-              if(pageColTotal + tmpObject.ColSpan > PAGE_SIZE) {
-                tmpSpanArray.unshift(tmpObject)
-                continue
-              }else{
-                ColSpan2.push(tmpObject)
-                pageColTotal += tmpObject.ColSpan
-              } 
-            }
-          }
-        }
-
-        return this.pileUpProducts({
-          ColTotal: pageColTotal,
-          ColSpanArray: [null, ColSpan1, ColSpan2]
-        });
-      });
-
-      return layout;
-    }
-
-
+    return layout;
   }
   // 堆砌每页的商品
   pileUpProducts({ ColTotal, ColSpanArray }) {
@@ -240,7 +213,7 @@ class VirtualShelf {
       group.reverse().map((count, k) => {
         for (let time = 0; time < count; time++) {
           _pushItem(ColSpanReverse[k])
-        }
+        } 
 
       })
     })
