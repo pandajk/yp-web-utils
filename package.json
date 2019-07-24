@@ -1,6 +1,6 @@
 {
   "name": "yp-web-utils",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "utility for yp web project",
   "main": "dist/index.js",
   "repository": "git@github.com:pandajk/yp-web-utils.git",
@@ -17,7 +17,7 @@
     "build": "rm -rf ./dist/* && ./node_modules/.bin/babel ./src --out-dir ./dist/ --minified",
     "test": "ava tests/*.js --verbose"
   },
- "devDependencies": {
+  "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.7.0",
