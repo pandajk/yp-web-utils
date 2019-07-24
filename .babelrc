@@ -1,18 +1,23 @@
 {
-  "presets": ["@ava/babel-preset-stage-4"],
-  "plugins": [
-     ["@babel/plugin-proposal-decorators", { "legacy": true }],
-    "@babel/plugin-proposal-function-sent",
-    "@babel/plugin-proposal-export-namespace-from",
-    "@babel/plugin-proposal-numeric-separator",
-    "@babel/plugin-proposal-throw-expressions",
-    [
-      "@babel/plugin-transform-runtime",
+  "presets": [
+    ["env",
+    {
+      "targets":
       {
-        "helpers": false,
-        "regenerator": true,
+        "browsers": ["> 1%", "last 2 versions", "not ie <= 8"]
       }
-    ]
+    }],
+
+    "stage-2"
   ],
+  "plugins": [[
+  "transform-runtime",
+  {
+    "helpers": false,
+    "polyfill": false,
+    "regenerator": true,
+    "moduleName": "babel-runtime"
+  }
+]],
   "comments": false
 }

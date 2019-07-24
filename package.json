@@ -17,28 +17,13 @@
     "build": "rm -rf ./dist/* && ./node_modules/.bin/babel ./src --out-dir ./dist/ --minified",
     "test": "ava tests/*.js --verbose"
   },
-  "devDependencies": {
-    "@ava/babel-preset-stage-4": "^3.0.0",
-    "@babel/cli": "^7.5.0",
-    "@babel/core": "^7.5.0",
-    "@babel/plugin-proposal-decorators": "^7.4.4",
-    "@babel/plugin-proposal-export-namespace-from": "^7.5.2",
-    "@babel/plugin-proposal-function-sent": "^7.5.0",
-    "@babel/plugin-proposal-numeric-separator": "^7.2.0",
-    "@babel/plugin-proposal-throw-expressions": "^7.2.0",
-    "@babel/plugin-transform-runtime": "^7.5.0",
-    "@babel/preset-env": "^7.5.2",
-    "@babel/preset-stage-2": "^7.0.0",
-    "@babel/preset-stage-3": "^7.0.0",
-    "@babel/register": "^7.4.4",
-    "@babel/runtime": "^7.5.2",
-    "ava": "^2.2.0",
-    "browser-env": "^3.2.6",
+ "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "ts-loader": "^5.3.3",
+    "typescript": "^3.3.3333",
     "webpack": "^4.29.6"
-  },
-  "ava": {
-    "require": [
-      "@babel/register"
-    ]
   }
 }
