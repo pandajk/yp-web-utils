@@ -50,7 +50,7 @@ class VirtualShelf {
     const Products = await this.uniqueProduct();
     const ProductLayout = [];
 
-    if (this.TemplateID === 3) {
+    if ([3, 7].indexOf(this.TemplateID) > -1) {
       ProductLayout.push({
         title: `货架`,
         layout: [Products.ProductList]
