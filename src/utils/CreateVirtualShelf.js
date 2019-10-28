@@ -42,6 +42,12 @@ class VirtualShelf {
         PAGE_SIZE: 0, // 每屏不限商品个数
         PAGE_ROW: 1,
         ROW_SIZE: 1
+      },
+      //  TemplateID=8, 横屏无触摸
+      {
+        PAGE_SIZE: 0, // 每屏不限商品个数
+        PAGE_ROW: 1,
+        ROW_SIZE: 1
       }
     ];
   }
