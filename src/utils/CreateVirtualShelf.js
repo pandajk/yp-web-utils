@@ -55,8 +55,8 @@ class VirtualShelf {
   async init() {
     const Products = await this.uniqueProduct();
     const ProductLayout = [];
-
-    if ([3, 7].indexOf(this.TemplateID) > -1) {
+    // TODO: IMPORTANT, PAGE_SIZE=0的模版
+    if ([3, 7, 8].indexOf(this.TemplateID) > -1) {
       ProductLayout.push({
         title: `货架`,
         layout: [Products.ProductList]
