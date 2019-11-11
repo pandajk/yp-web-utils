@@ -17,37 +17,58 @@ class VirtualShelf {
       {
         PAGE_SIZE: 30, // 每屏30个货道商品
         PAGE_ROW: 3,
-        ROW_SIZE: 10
+        ROW_SIZE: 10,
+        EnableSpan: true
       },
       // TemplateID=2，横屏设备
       {
         PAGE_SIZE: 28, // 每屏28个货道商品
         PAGE_ROW: 2,
-        ROW_SIZE: 14
+        ROW_SIZE: 14,
+        EnableSpan: true
       },
       // TemplateID=3，无屏设备
       {
         PAGE_SIZE: 0, // 每屏不限商品个数
         PAGE_ROW: 1,
-        ROW_SIZE: 1
+        ROW_SIZE: 1,
+        EnableSpan: false
       },
       // TemplateID=4，5x4
-      null, // 5x4, 不自动生成
+      {
+        PAGE_SIZE: 20, // 每屏25个货道商品
+        PAGE_ROW: 5,
+        ROW_SIZE: 4,
+        EnableSpan: false
+      },
       // TemplateID=5,5x5
-      null,
+      {
+        PAGE_SIZE: 25, // 每屏25个货道商品
+        PAGE_ROW: 5,
+        ROW_SIZE: 5,
+        EnableSpan: false
+      },
       // TemplateID=6, 10寸屏，4x5
-      null,
+      {
+        PAGE_SIZE: 20, // 每屏25个货道商品
+        PAGE_ROW: 4,
+        ROW_SIZE: 5,
+        EnableSpan: false
+      },
+      ,
       // TemplateID=7, 横屏爆米花，1x3
       {
         PAGE_SIZE: 0, // 每屏不限商品个数
         PAGE_ROW: 1,
-        ROW_SIZE: 1
+        ROW_SIZE: 1,
+        EnableSpan: false
       },
       //  TemplateID=8, 横屏无触摸
       {
         PAGE_SIZE: 0, // 每屏不限商品个数
         PAGE_ROW: 1,
-        ROW_SIZE: 1
+        ROW_SIZE: 1,
+        EnableSpan: false
       }
     ];
   }
@@ -58,11 +79,19 @@ class VirtualShelf {
     // TODO: IMPORTANT, PAGE_SIZE=0的模版
     if ([3, 7, 8].indexOf(this.TemplateID) > -1) {
       ProductLayout.push({
-        title: `货架`,
+        title: `全部商品`,
         layout: [Products.ProductList]
       });
     } else {
-      const layout = this.pagingProducts(Products);
+      const config = this.PRESET_TEMPLATE_CONFIG[this.TemplateID];
+      let layout = [];
+      if (!config.EnableSpan) {
+        // 不区分商品占格
+        layout = this.pagingProducts(Products, config);
+      } else {
+        // 区分商品占格
+        layout = this.pagingColSpanProducts(Products, config);
+      }
       layout.map((el, i) => {
         ProductLayout.push({
           title: `货架${i + 1}`,
@@ -70,7 +99,7 @@ class VirtualShelf {
         });
       });
     }
-    console.log(ProductLayout);
+
     return ProductLayout;
   }
 
@@ -124,13 +153,55 @@ class VirtualShelf {
     });
   }
 
-  // 对货道商品进行分页
-  pagingProducts({ ProductList, ColTotal, ColSpanArray }) {
-    const { PRESET_TEMPLATE_CONFIG, TemplateID } = this;
-    const { PAGE_SIZE, PAGE_ROW, ROW_SIZE } = PRESET_TEMPLATE_CONFIG[
-      TemplateID
-    ];
+  // 对货道商品进行分页， 不区分1格、2格商品
+  pagingProducts({ ProductList }, config) {
+    const { PAGE_SIZE } = config;
+    const screens = Math.ceil(ProductList.length / PAGE_SIZE);
 
+    const layout = new Array(screens).fill().map((el, page) => {
+      // 分屏
+      const pageSize = Math.ceil(ProductList.length / screens);
+      const screen = ProductList.slice(pageSize * page, pageSize * (page + 1));
+
+      return this.pileUpProducts(screen, config);
+    });
+
+    return layout;
+  }
+
+  pileUpProducts(ProductList, { PAGE_SIZE, PAGE_ROW, ROW_SIZE }) {
+    // 有屏设备
+    const screen = new Array(PAGE_ROW).fill().map(el => []); // 每屏 PAGE_ROW 排
+    // 每个商品重复次数
+    const repeat = Math.floor(PAGE_SIZE / ProductList.length);
+    // 每屏剩余空位
+    let remainder = PAGE_SIZE - ProductList.length * repeat;
+    const len = ProductList.length;
+
+    const productList = []; // 长度为 PAGE_SIZE 的数组
+    for (let i = 0; i < len; i++) {
+      let repeats = repeat;
+      // 填充剩余空位
+      if (remainder > 0) {
+        repeats += 1;
+        remainder -= 1;
+      }
+      const product = ProductList[i];
+      // 根据 repeats 填充 productList
+      const tmp = new Array(repeats).fill().map(el => product);
+      productList.push(...tmp);
+    }
+    // 将 productList 转换成二位数组， row column
+    for (let r = 0; r < PAGE_ROW; r++) {
+      screen[r] = productList.slice(r * ROW_SIZE, (r + 1) * ROW_SIZE);
+    }
+
+    return screen;
+  }
+
+  // 对货道商品进行分页
+  pagingColSpanProducts({ ProductList, ColTotal, ColSpanArray }, config) {
+    const { PAGE_SIZE } = config;
     const screens = Math.ceil(ColTotal / PAGE_SIZE);
 
     const remainderPercent = (ColTotal % PAGE_SIZE) / PAGE_SIZE;
@@ -157,21 +228,22 @@ class VirtualShelf {
 
       ColTotal = ColSpan1.length + ColSpan2.length * 2;
 
-      return this.pileUpProducts({
-        ColTotal,
-        ColSpanArray: [null, ColSpan1, ColSpan2]
-      });
+      return this.pileUpColSpanProducts(
+        {
+          ColTotal,
+          ColSpanArray: [null, ColSpan1, ColSpan2]
+        },
+        config
+      );
     });
 
     return layout;
   }
   // 堆砌每页的商品
-  pileUpProducts({ ColTotal, ColSpanArray }) {
-    const { PRESET_TEMPLATE_CONFIG, TemplateID } = this;
-    const { PAGE_SIZE, PAGE_ROW, ROW_SIZE } = PRESET_TEMPLATE_CONFIG[
-      TemplateID
-    ];
-
+  pileUpColSpanProducts(
+    { ColTotal, ColSpanArray },
+    { PAGE_SIZE, PAGE_ROW, ROW_SIZE }
+  ) {
     // 无屏设备 或 非法类型
     if (!PAGE_SIZE) return;
 
