@@ -69,6 +69,13 @@ class VirtualShelf {
         PAGE_ROW: 1,
         ROW_SIZE: 1,
         EnableSpan: false
+      },
+      // TemplateID=9, 竖屏3x3
+      {
+        PAGE_SIZE: 9, // 每屏不限商品个数
+        PAGE_ROW: 3,
+        ROW_SIZE: 3,
+        EnableSpan: false
       }
     ];
   }
