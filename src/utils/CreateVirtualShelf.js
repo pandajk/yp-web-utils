@@ -12,72 +12,73 @@ class VirtualShelf {
     this.cargolist = cargolist;
     this.TemplateID = TemplateID;
     this.PRESET_TEMPLATE_CONFIG = [
-      null, // TemplateID计数从1开始
-      // TemplateID=1，竖屏设备
-      {
-        PAGE_SIZE: 30, // 每屏30个货道商品
-        PAGE_ROW: 3,
-        ROW_SIZE: 10,
-        EnableSpan: true
-      },
-      // TemplateID=2，横屏设备
-      {
-        PAGE_SIZE: 28, // 每屏28个货道商品
-        PAGE_ROW: 2,
-        ROW_SIZE: 14,
-        EnableSpan: true
-      },
-      // TemplateID=3，无屏设备
-      {
-        PAGE_SIZE: 0, // 每屏不限商品个数
-        PAGE_ROW: 1,
-        ROW_SIZE: 1,
-        EnableSpan: false
-      },
-      // TemplateID=4，5x4
-      {
-        PAGE_SIZE: 20, // 每屏25个货道商品
-        PAGE_ROW: 5,
-        ROW_SIZE: 4,
-        EnableSpan: false
-      },
-      // TemplateID=5,5x5
-      {
-        PAGE_SIZE: 25, // 每屏25个货道商品
-        PAGE_ROW: 5,
-        ROW_SIZE: 5,
-        EnableSpan: false
-      },
-      // TemplateID=6, 10寸屏，4x5
-      {
-        PAGE_SIZE: 20, // 每屏25个货道商品
-        PAGE_ROW: 4,
-        ROW_SIZE: 5,
-        EnableSpan: false
-      },
-      ,
-      // TemplateID=7, 横屏爆米花，1x3
-      {
-        PAGE_SIZE: 0, // 每屏不限商品个数
-        PAGE_ROW: 1,
-        ROW_SIZE: 1,
-        EnableSpan: false
-      },
-      //  TemplateID=8, 横屏无触摸
-      {
-        PAGE_SIZE: 0, // 每屏不限商品个数
-        PAGE_ROW: 1,
-        ROW_SIZE: 1,
-        EnableSpan: false
-      },
-      // TemplateID=9, 竖屏3x3
-      {
-        PAGE_SIZE: 9, // 每屏不限商品个数
-        PAGE_ROW: 3,
-        ROW_SIZE: 3,
-        EnableSpan: false
-      }
+      null // TemplateID计数从1开始
     ];
+    // TemplateID=1，竖屏设备
+
+    this.PRESET_TEMPLATE_CONFIG[1] = {
+      PAGE_SIZE: 30, // 每屏30个货道商品
+      PAGE_ROW: 3,
+      ROW_SIZE: 10,
+      EnableSpan: true
+    };
+
+    // TemplateID=2，横屏设备
+    this.PRESET_TEMPLATE_CONFIG[2] = {
+      PAGE_SIZE: 28, // 每屏28个货道商品
+      PAGE_ROW: 2,
+      ROW_SIZE: 14,
+      EnableSpan: true
+    };
+    // TemplateID=3，无屏设备
+    this.PRESET_TEMPLATE_CONFIG[3] = {
+      PAGE_SIZE: 0, // 每屏不限商品个数
+      PAGE_ROW: 1,
+      ROW_SIZE: 1,
+      EnableSpan: false
+    };
+    // TemplateID=4，5x4
+    this.PRESET_TEMPLATE_CONFIG[4] = {
+      PAGE_SIZE: 20, // 每屏25个货道商品
+      PAGE_ROW: 5,
+      ROW_SIZE: 4,
+      EnableSpan: false
+    };
+    // TemplateID=5,5x5
+    this.PRESET_TEMPLATE_CONFIG[5] = {
+      PAGE_SIZE: 25, // 每屏25个货道商品
+      PAGE_ROW: 5,
+      ROW_SIZE: 5,
+      EnableSpan: false
+    };
+    // TemplateID=6, 10寸屏，4x5
+    this.PRESET_TEMPLATE_CONFIG[6] = {
+      PAGE_SIZE: 20, // 每屏25个货道商品
+      PAGE_ROW: 4,
+      ROW_SIZE: 5,
+      EnableSpan: false
+    };
+    // TemplateID=7, 横屏爆米花，1x3
+    this.PRESET_TEMPLATE_CONFIG[7] = {
+      PAGE_SIZE: 0, // 每屏不限商品个数
+      PAGE_ROW: 1,
+      ROW_SIZE: 1,
+      EnableSpan: false
+    };
+    //  TemplateID=8, 横屏无触摸
+    this.PRESET_TEMPLATE_CONFIG[8] = {
+      PAGE_SIZE: 0, // 每屏不限商品个数
+      PAGE_ROW: 1,
+      ROW_SIZE: 1,
+      EnableSpan: false
+    };
+    // TemplateID=9, 竖屏3x3
+    this.PRESET_TEMPLATE_CONFIG[9] = {
+      PAGE_SIZE: 9, // 每屏不限商品个数
+      PAGE_ROW: 3,
+      ROW_SIZE: 3,
+      EnableSpan: false
+    };
   }
 
   async init() {
@@ -91,6 +92,7 @@ class VirtualShelf {
       });
     } else {
       const config = this.PRESET_TEMPLATE_CONFIG[this.TemplateID];
+
       let layout = [];
       if (!config.EnableSpan) {
         // 不区分商品占格
@@ -111,17 +113,20 @@ class VirtualShelf {
   }
 
   uniqueProduct() {
-    const ProductMap = new Map();
+    const ProductMap = [new Map(), new Map(), new Map()];
     let ProductList = [];
     let ColTotal = 0;
     let ColSpanArray = [null, [], []];
 
     this.cargolist.map(el => {
-      ProductMap.set(el.BarCode, el);
+      try {
+        ProductMap[el.Temperature].set(el.BarCode, el);
+      } catch (err) {}
     });
 
-    ProductList = Array.from(ProductMap.values());
-
+    ProductMap.forEach(el => {
+      ProductList = ProductList.concat(Array.from(el.values()));
+    });
     const loaders = ProductList.map(el => {
       ColTotal += el.ColSpan;
 
@@ -172,7 +177,6 @@ class VirtualShelf {
 
       return this.pileUpProducts(screen, config);
     });
-
     return layout;
   }
 
