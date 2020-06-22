@@ -6,6 +6,8 @@
  */
 
 // 图片预加载
+
+var promiseLimit = require('promise-limit');
 /**
  * [ImagePreloader 图片预加载]
  * @param {[Array, String]} src [预加载数据]
@@ -13,11 +15,13 @@
 function ImagePreloader(src, options) {
   // this.buffer = [];
 
-  options = Object.assign({
-    prefix: '',
-    suffix: '',
-  }, options);
-
+  options = Object.assign(
+    {
+      prefix: '',
+      suffix: '',
+    },
+    options
+  );
 
   switch (Object.prototype.toString.call(src)) {
     case '[object Array]':
@@ -49,7 +53,12 @@ ImagePreloader.prototype.loadImage = function loadImage() {
 
 ImagePreloader.prototype.loadImages = function loadImage() {
   // is a promise array
-  const images = this.src.map(el => this.onload(el));
+  var limit = promiseLimit(5);
+  const images = this.src.map((el) =>
+    limit(() => {
+      this.onload(el);
+    })
+  );
   return Promise.all(images);
 };
 

@@ -5,14 +5,14 @@
  * @Last Modified time: 2019-07-09 15:48:55
  */
 
-import ImagePreloader from "./ImagePreloader.js";
-
+import ImagePreloader from './ImagePreloader.js';
+import promiseLimit from 'promise-limit';
 class VirtualShelf {
   constructor(cargolist, TemplateID = 1) {
     this.cargolist = cargolist;
     this.TemplateID = TemplateID;
     this.PRESET_TEMPLATE_CONFIG = [
-      null // TemplateID计数从1开始
+      null, // TemplateID计数从1开始
     ];
     // TemplateID=1，竖屏设备
 
@@ -20,7 +20,7 @@ class VirtualShelf {
       PAGE_SIZE: 30, // 每屏30个货道商品
       PAGE_ROW: 3,
       ROW_SIZE: 10,
-      EnableSpan: true
+      EnableSpan: true,
     };
 
     // TemplateID=2，横屏设备
@@ -28,56 +28,56 @@ class VirtualShelf {
       PAGE_SIZE: 28, // 每屏28个货道商品
       PAGE_ROW: 2,
       ROW_SIZE: 14,
-      EnableSpan: true
+      EnableSpan: true,
     };
     // TemplateID=3，无屏设备
     this.PRESET_TEMPLATE_CONFIG[3] = {
       PAGE_SIZE: 0, // 每屏不限商品个数
       PAGE_ROW: 1,
       ROW_SIZE: 1,
-      EnableSpan: false
+      EnableSpan: false,
     };
     // TemplateID=4，5x4
     this.PRESET_TEMPLATE_CONFIG[4] = {
       PAGE_SIZE: 20, // 每屏25个货道商品
       PAGE_ROW: 5,
       ROW_SIZE: 4,
-      EnableSpan: false
+      EnableSpan: false,
     };
     // TemplateID=5,5x5
     this.PRESET_TEMPLATE_CONFIG[5] = {
       PAGE_SIZE: 25, // 每屏25个货道商品
       PAGE_ROW: 5,
       ROW_SIZE: 5,
-      EnableSpan: false
+      EnableSpan: false,
     };
     // TemplateID=6, 10寸屏，4x5
     this.PRESET_TEMPLATE_CONFIG[6] = {
       PAGE_SIZE: 20, // 每屏25个货道商品
       PAGE_ROW: 4,
       ROW_SIZE: 5,
-      EnableSpan: false
+      EnableSpan: false,
     };
     // TemplateID=7, 横屏爆米花，1x3
     this.PRESET_TEMPLATE_CONFIG[7] = {
       PAGE_SIZE: 0, // 每屏不限商品个数
       PAGE_ROW: 1,
       ROW_SIZE: 1,
-      EnableSpan: false
+      EnableSpan: false,
     };
     //  TemplateID=8, 横屏无触摸
     this.PRESET_TEMPLATE_CONFIG[8] = {
       PAGE_SIZE: 0, // 每屏不限商品个数
       PAGE_ROW: 1,
       ROW_SIZE: 1,
-      EnableSpan: false
+      EnableSpan: false,
     };
     // TemplateID=9, 竖屏3x3
     this.PRESET_TEMPLATE_CONFIG[9] = {
       PAGE_SIZE: 9, // 每屏不限商品个数
       PAGE_ROW: 3,
       ROW_SIZE: 3,
-      EnableSpan: false
+      EnableSpan: false,
     };
   }
 
@@ -88,7 +88,7 @@ class VirtualShelf {
     if ([3, 7, 8].indexOf(this.TemplateID) > -1) {
       ProductLayout.push({
         title: `全部商品`,
-        layout: [Products.ProductList]
+        layout: [Products.ProductList],
       });
     } else {
       const config = this.PRESET_TEMPLATE_CONFIG[this.TemplateID];
@@ -104,7 +104,7 @@ class VirtualShelf {
       layout.map((el, i) => {
         ProductLayout.push({
           title: `货架${i + 1}`,
-          layout: el
+          layout: el,
         });
       });
     }
@@ -118,47 +118,49 @@ class VirtualShelf {
     let ColTotal = 0;
     let ColSpanArray = [null, [], []];
 
-    this.cargolist.map(el => {
+    this.cargolist.map((el) => {
       try {
         ProductMap[el.Temperature].set(el.BarCode, el);
       } catch (err) {}
     });
 
-    ProductMap.forEach(el => {
+    ProductMap.forEach((el) => {
       ProductList = ProductList.concat(Array.from(el.values()));
     });
-    const loaders = ProductList.map(el => {
+    const limit = promiseLimit(5);
+    const loaders = ProductList.map((el) => {
       ColTotal += el.ColSpan;
 
       if (ColSpanArray[el.ColSpan]) {
         ColSpanArray[el.ColSpan].push(el);
       }
-
-      return new Promise((resolve, reject) => {
-        const loader = new ImagePreloader(el.ImageFixWidthUrl, {
-          suffix: "?x-oss-process=image/resize,p_1"
-        });
-        loader
-          .loadImage()
-          .then(image => {
-            setImageInfo(el, image);
-            resolve();
-            // _finally.call(this);
-          })
-          .catch(err => {
-            // if(el.ColSpan == 2){
-            //   el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_2.png';
-            // }else{
-            //   el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_1.png';
-            // }
-            el.ImageFixWidthUrl = "";
-            console.log("reject-1", err);
-            resolve(); // reject
+      return limit(() => {
+        return new Promise((resolve, reject) => {
+          const loader = new ImagePreloader(el.ImageFixWidthUrl, {
+            suffix: '?x-oss-process=image/resize,p_1',
           });
+          loader
+            .loadImage()
+            .then((image) => {
+              setImageInfo(el, image);
+              resolve();
+              // _finally.call(this);
+            })
+            .catch((err) => {
+              // if(el.ColSpan == 2){
+              //   el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_2.png';
+              // }else{
+              //   el.ImageFixWidthUrl = 'http://res.yopoint.com/static/image/products/img_default_1.png';
+              // }
+              el.ImageFixWidthUrl = '';
+              console.log('reject-1', err);
+              resolve(); // reject
+            });
+        });
       });
     });
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       Promise.all(loaders).then(() => {
         resolve({ ProductList, ColTotal, ColSpanArray });
       });
@@ -182,7 +184,7 @@ class VirtualShelf {
 
   pileUpProducts(ProductList, { PAGE_SIZE, PAGE_ROW, ROW_SIZE }) {
     // 有屏设备
-    const screen = new Array(PAGE_ROW).fill().map(el => []); // 每屏 PAGE_ROW 排
+    const screen = new Array(PAGE_ROW).fill().map((el) => []); // 每屏 PAGE_ROW 排
     // 每个商品重复次数
     const repeat = Math.floor(PAGE_SIZE / ProductList.length);
     // 每屏剩余空位
@@ -199,7 +201,7 @@ class VirtualShelf {
       }
       const product = ProductList[i];
       // 根据 repeats 填充 productList
-      const tmp = new Array(repeats).fill().map(el => product);
+      const tmp = new Array(repeats).fill().map((el) => product);
       productList.push(...tmp);
     }
     // 将 productList 转换成二位数组， row column
@@ -242,7 +244,7 @@ class VirtualShelf {
       return this.pileUpColSpanProducts(
         {
           ColTotal,
-          ColSpanArray: [null, ColSpan1, ColSpan2]
+          ColSpanArray: [null, ColSpan1, ColSpan2],
         },
         config
       );
@@ -259,7 +261,7 @@ class VirtualShelf {
     if (!PAGE_SIZE) return;
 
     // 有屏设备
-    const screen = new Array(PAGE_ROW).fill().map(el => []); // 每屏3排
+    const screen = new Array(PAGE_ROW).fill().map((el) => []); // 每屏3排
     const columns = new Array(PAGE_ROW).fill(0); // 每排10个货道
 
     const repeat = Math.floor(PAGE_SIZE / ColTotal);
@@ -277,7 +279,7 @@ class VirtualShelf {
     const ColSpanLength = [ColSpan1.length, ColSpan2.length];
     let ColSpanCount = [
       new Array(ColSpanLength[0]).fill(repeat),
-      new Array(ColSpanLength[1]).fill(repeat)
+      new Array(ColSpanLength[1]).fill(repeat),
     ];
 
     let indicator = [0, 0];
@@ -324,7 +326,7 @@ class VirtualShelf {
           screen[row].push(
             Object.assign({}, elem, {
               RowIndex: row,
-              ColumnIndex: columns[row]
+              ColumnIndex: columns[row],
             })
           );
           columns[row] += elem.ColSpan;
@@ -334,7 +336,7 @@ class VirtualShelf {
     }
 
     // 反转商品排列
-    screen.reverse().map(row => {
+    screen.reverse().map((row) => {
       row.reverse();
     });
 
@@ -347,8 +349,8 @@ export default async function CreateVirtualShelf(cargolist, TemplateID = 1) {
 }
 
 function setImageInfo(el, image) {
-  el["ImageWidth"] = (95 * image.width) / 750 / 0.4;
-  el["ImageHeight"] = (95 * image.height) / 750 / 0.4;
-  el["ImageOriginWidth"] = image.width / 0.4;
-  el["ImageOriginHeight"] = image.height / 0.4;
+  el['ImageWidth'] = (95 * image.width) / 750 / 0.4;
+  el['ImageHeight'] = (95 * image.height) / 750 / 0.4;
+  el['ImageOriginWidth'] = image.width / 0.4;
+  el['ImageOriginHeight'] = image.height / 0.4;
 }
