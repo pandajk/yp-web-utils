@@ -8,13 +8,13 @@
 import ImagePreloader from './ImagePreloader.js';
 import promiseLimit from 'promise-limit';
 class VirtualShelf {
-  constructor(cargolist, TemplateID = 1) {
+  constructor(cargolist, templateID = 1) {
     this.cargolist = cargolist;
-    this.TemplateID = TemplateID;
+    this.templateID = templateID;
     this.PRESET_TEMPLATE_CONFIG = [
       null, // TemplateID计数从1开始
     ];
-    // TemplateID=1，竖屏设备
+    // templateID=1，竖屏设备
 
     this.PRESET_TEMPLATE_CONFIG[1] = {
       PAGE_SIZE: 30, // 每屏30个货道商品
@@ -23,56 +23,56 @@ class VirtualShelf {
       EnableSpan: true,
     };
 
-    // TemplateID=2，横屏设备
+    // templateID=2，横屏设备
     this.PRESET_TEMPLATE_CONFIG[2] = {
       PAGE_SIZE: 28, // 每屏28个货道商品
       PAGE_ROW: 2,
       ROW_SIZE: 14,
       EnableSpan: true,
     };
-    // TemplateID=3，无屏设备
+    // templateID=3，无屏设备
     this.PRESET_TEMPLATE_CONFIG[3] = {
       PAGE_SIZE: 0, // 每屏不限商品个数
       PAGE_ROW: 1,
       ROW_SIZE: 1,
       EnableSpan: false,
     };
-    // TemplateID=4，5x4
+    // templateID=4，5x4
     this.PRESET_TEMPLATE_CONFIG[4] = {
       PAGE_SIZE: 20, // 每屏25个货道商品
       PAGE_ROW: 5,
       ROW_SIZE: 4,
       EnableSpan: false,
     };
-    // TemplateID=5,5x5
+    // templateID=5,5x5
     this.PRESET_TEMPLATE_CONFIG[5] = {
       PAGE_SIZE: 25, // 每屏25个货道商品
       PAGE_ROW: 5,
       ROW_SIZE: 5,
       EnableSpan: false,
     };
-    // TemplateID=6, 10寸屏，4x5
+    // templateID=6, 10寸屏，4x5
     this.PRESET_TEMPLATE_CONFIG[6] = {
       PAGE_SIZE: 20, // 每屏25个货道商品
       PAGE_ROW: 4,
       ROW_SIZE: 5,
       EnableSpan: false,
     };
-    // TemplateID=7, 横屏爆米花，1x3
+    // templateID=7, 横屏爆米花，1x3
     this.PRESET_TEMPLATE_CONFIG[7] = {
       PAGE_SIZE: 0, // 每屏不限商品个数
       PAGE_ROW: 1,
       ROW_SIZE: 1,
       EnableSpan: false,
     };
-    //  TemplateID=8, 横屏无触摸
+    //  templateID=8, 横屏无触摸
     this.PRESET_TEMPLATE_CONFIG[8] = {
       PAGE_SIZE: 0, // 每屏不限商品个数
       PAGE_ROW: 1,
       ROW_SIZE: 1,
       EnableSpan: false,
     };
-    // TemplateID=9, 竖屏3x3
+    // templateID=9, 竖屏3x3
     this.PRESET_TEMPLATE_CONFIG[9] = {
       PAGE_SIZE: 9, // 每屏不限商品个数
       PAGE_ROW: 3,
@@ -82,57 +82,57 @@ class VirtualShelf {
   }
 
   async init() {
-    const Products = await this.uniqueProduct();
-    const ProductLayout = [];
+    const products = await this.uniqueProduct();
+    const productLayout = [];
     // TODO: IMPORTANT, PAGE_SIZE=0的模版
-    if ([3, 7, 8].indexOf(this.TemplateID) > -1) {
-      ProductLayout.push({
+    if ([3, 7, 8].indexOf(this.templateID) > -1) {
+      productLayout.push({
         title: `全部商品`,
-        layout: [Products.ProductList],
+        layout: [products.productList],
       });
     } else {
-      const config = this.PRESET_TEMPLATE_CONFIG[this.TemplateID];
+      const config = this.PRESET_TEMPLATE_CONFIG[this.templateID];
 
       let layout = [];
       if (!config.EnableSpan) {
         // 不区分商品占格
-        layout = this.pagingProducts(Products, config);
+        layout = this.pagingProducts(products, config);
       } else {
         // 区分商品占格
-        layout = this.pagingColSpanProducts(Products, config);
+        layout = this.pagingColSpanProducts(products, config);
       }
       layout.map((el, i) => {
-        ProductLayout.push({
+        productLayout.push({
           title: `货架${i + 1}`,
           layout: el,
         });
       });
     }
 
-    return ProductLayout;
+    return productLayout;
   }
 
   uniqueProduct() {
-    const ProductMap = [new Map(), new Map(), new Map()];
-    let ProductList = [];
-    let ColTotal = 0;
-    let ColSpanArray = [null, [], []];
+    const productMap = [new Map(), new Map(), new Map()];
+    let productList = [];
+    let colTotal = 0;
+    let colSpanArray = [null, [], []];
 
     this.cargolist.map((el) => {
       try {
-        ProductMap[el.Temperature].set(el.BarCode, el);
+        productMap[el.Temperature].set(el.BarCode, el);
       } catch (err) {}
     });
 
-    ProductMap.forEach((el) => {
-      ProductList = ProductList.concat(Array.from(el.values()));
+    productMap.forEach((el) => {
+      productList = productList.concat(Array.from(el.values()));
     });
     const limit = promiseLimit(5);
-    const loaders = ProductList.map((el) => {
-      ColTotal += el.ColSpan;
+    const loaders = productList.map((el) => {
+      colTotal += el.ColSpan;
 
-      if (ColSpanArray[el.ColSpan]) {
-        ColSpanArray[el.ColSpan].push(el);
+      if (colSpanArray[el.ColSpan]) {
+        colSpanArray[el.ColSpan].push(el);
       }
       return limit(() => {
         return new Promise((resolve, reject) => {
@@ -162,36 +162,36 @@ class VirtualShelf {
 
     return new Promise((resolve) => {
       Promise.all(loaders).then(() => {
-        resolve({ ProductList, ColTotal, ColSpanArray });
+        resolve({ productList, colTotal, colSpanArray });
       });
     });
   }
 
   // 对货道商品进行分页， 不区分1格、2格商品
-  pagingProducts({ ProductList }, config) {
+  pagingProducts({ productList }, config) {
     const { PAGE_SIZE } = config;
-    const screens = Math.ceil(ProductList.length / PAGE_SIZE);
+    const screens = Math.ceil(productList.length / PAGE_SIZE);
 
     const layout = new Array(screens).fill().map((el, page) => {
       // 分屏
-      const pageSize = Math.ceil(ProductList.length / screens);
-      const screen = ProductList.slice(pageSize * page, pageSize * (page + 1));
+      const pageSize = Math.ceil(productList.length / screens);
+      const screen = productList.slice(pageSize * page, pageSize * (page + 1));
 
       return this.pileUpProducts(screen, config);
     });
     return layout;
   }
 
-  pileUpProducts(ProductList, { PAGE_SIZE, PAGE_ROW, ROW_SIZE }) {
+  pileUpProducts(productList, { PAGE_SIZE, PAGE_ROW, ROW_SIZE }) {
     // 有屏设备
     const screen = new Array(PAGE_ROW).fill().map((el) => []); // 每屏 PAGE_ROW 排
     // 每个商品重复次数
-    const repeat = Math.floor(PAGE_SIZE / ProductList.length);
+    const repeat = Math.floor(PAGE_SIZE / productList.length);
     // 每屏剩余空位
-    let remainder = PAGE_SIZE - ProductList.length * repeat;
-    const len = ProductList.length;
+    let remainder = PAGE_SIZE - productList.length * repeat;
+    const len = productList.length;
 
-    const productList = []; // 长度为 PAGE_SIZE 的数组
+    const list = []; // 长度为 PAGE_SIZE 的数组
     for (let i = 0; i < len; i++) {
       let repeats = repeat;
       // 填充剩余空位
@@ -199,52 +199,52 @@ class VirtualShelf {
         repeats += 1;
         remainder -= 1;
       }
-      const product = ProductList[i];
+      const product = productList[i];
       // 根据 repeats 填充 productList
       const tmp = new Array(repeats).fill().map((el) => product);
-      productList.push(...tmp);
+      list.push(...tmp);
     }
-    // 将 productList 转换成二位数组， row column
+    // 将 list 转换成二位数组， row column
     for (let r = 0; r < PAGE_ROW; r++) {
-      screen[r] = productList.slice(r * ROW_SIZE, (r + 1) * ROW_SIZE);
+      screen[r] = list.slice(r * ROW_SIZE, (r + 1) * ROW_SIZE);
     }
 
     return screen;
   }
 
   // 对货道商品进行分页
-  pagingColSpanProducts({ ProductList, ColTotal, ColSpanArray }, config) {
+  pagingColSpanProducts({ productList, colTotal, colSpanArray }, config) {
     const { PAGE_SIZE } = config;
-    const screens = Math.ceil(ColTotal / PAGE_SIZE);
+    const screens = Math.ceil(colTotal / PAGE_SIZE);
 
-    const remainderPercent = (ColTotal % PAGE_SIZE) / PAGE_SIZE;
+    // const remainderPercent = (colTotal % PAGE_SIZE) / PAGE_SIZE;
 
-    const ColSpan1Size = Math.ceil(ColSpanArray[1].length / screens);
-    const ColSpan2Size = Math.ceil(ColSpanArray[2].length / screens);
+    const colSpan1Size = Math.ceil(colSpanArray[1].length / screens);
+    const colSpan2Size = Math.ceil(colSpanArray[2].length / screens);
 
     let overflow = 0;
 
     const layout = new Array(screens).fill().map((el, page) => {
-      let ColSpan2 = [];
-      let ColSpan1 = [];
+      let colSpan2 = [];
+      let colSpan1 = [];
 
       // 分屏，单页可能超过限定 PAGE_SIZE
-      if (ColSpan1Size + ColSpan2Size * 2 > PAGE_SIZE) {
-        ColSpan2 = ColSpanArray[2].splice(0, ColSpan2Size);
-        ColSpan1 = ColSpanArray[1].splice(0, PAGE_SIZE - ColSpan2.length * 2);
+      if (colSpan1Size + colSpan2Size * 2 > PAGE_SIZE) {
+        colSpan2 = colSpanArray[2].splice(0, colSpan2Size);
+        colSpan1 = colSpanArray[1].splice(0, PAGE_SIZE - colSpan2.length * 2);
 
-        overflow = ColTotal - PAGE_SIZE;
+        overflow = colTotal - PAGE_SIZE;
       } else {
-        ColSpan2 = ColSpanArray[2].splice(0, ColSpan2Size);
-        ColSpan1 = ColSpanArray[1].splice(0, ColSpan1Size);
+        colSpan2 = colSpanArray[2].splice(0, colSpan2Size);
+        colSpan1 = colSpanArray[1].splice(0, colSpan1Size);
       }
 
-      ColTotal = ColSpan1.length + ColSpan2.length * 2;
+      colTotal = colSpan1.length + colSpan2.length * 2;
 
       return this.pileUpColSpanProducts(
         {
-          ColTotal,
-          ColSpanArray: [null, ColSpan1, ColSpan2],
+          colTotal,
+          colSpanArray: [null, colSpan1, colSpan2],
         },
         config
       );
@@ -254,7 +254,7 @@ class VirtualShelf {
   }
   // 堆砌每页的商品
   pileUpColSpanProducts(
-    { ColTotal, ColSpanArray },
+    { colTotal, colSpanArray },
     { PAGE_SIZE, PAGE_ROW, ROW_SIZE }
   ) {
     // 无屏设备 或 非法类型
@@ -264,42 +264,57 @@ class VirtualShelf {
     const screen = new Array(PAGE_ROW).fill().map((el) => []); // 每屏3排
     const columns = new Array(PAGE_ROW).fill(0); // 每排10个货道
 
-    const repeat = Math.floor(PAGE_SIZE / ColTotal);
-    let overflow = PAGE_SIZE - repeat * ColTotal;
+    // 当前页商品，至少循环次数
+    const repeat = Math.floor(PAGE_SIZE / colTotal);
+    // 当前页商品使用至少循环次数填充后， 页面剩余格数
+    let space = PAGE_SIZE - repeat * colTotal;
 
-    let stack = PAGE_SIZE;
-
-    let ColSpan1 = ColSpanArray[1].sort((a, b) => {
+    let colSpan1 = colSpanArray[1].sort((a, b) => {
       return a.ImageHeight - b.ImageHeight;
     });
-    let ColSpan2 = ColSpanArray[2].sort((a, b) => {
+    let colSpan2 = colSpanArray[2].sort((a, b) => {
       return a.ImageHeight - b.ImageHeight;
     });
-
-    const ColSpanLength = [ColSpan1.length, ColSpan2.length];
-    let ColSpanCount = [
-      new Array(ColSpanLength[0]).fill(repeat),
-      new Array(ColSpanLength[1]).fill(repeat),
+    /**
+     * productColSpanLength  每种格数商品的个数
+     * [1格商品，2格商品]
+     */
+    const productColSpanLength = [colSpan1.length, colSpan2.length];
+    /**
+     * productColSpanRepeatCounter
+     * 商品循环次数 计数器
+     * [3,1,2] -> 第一个商品循环3次，第二个商品循环1次，第三个商品循环2次，
+     */
+    let productColSpanRepeatCounter = [
+      new Array(productColSpanLength[0]).fill(repeat),
+      new Array(productColSpanLength[1]).fill(repeat),
     ];
 
+    // 指示器，记录当前循环到第几个商品
     let indicator = [0, 0];
+    // 循环计数器，用于来回切换一格、两格商品
     let loop = 0;
 
-    const fillRemainderSpace = () => {
-      if (overflow <= 0) return;
+    /**
+     *  fillRemainderSpace
+     *  递归计算productColSpanRepeatCounter
+     */
 
-      if (isNaN(overflow)) return;
+    const fillRemainderSpace = () => {
+      if (space <= 0) return;
+
+      if (isNaN(space)) return;
       loop += 1;
       let idx = loop % 2;
-      let ColSpan = idx + 1; // idx = 0, ColSpan = 1; idx = 1, ColSpan = 2
+      let colSpan = idx + 1; // idx = 0, colSpan = 1; idx = 1, colSpan = 2
       // return
 
       // 如果剩余空间不小于商品格数 && 指示器小于长度
       // 时，表示可添加
-      if (overflow >= ColSpan && indicator[idx] < ColSpanLength[idx]) {
-        ColSpanCount[idx][indicator[idx]] += 1;
+      if (space >= colSpan && indicator[idx] < productColSpanLength[idx]) {
+        productColSpanRepeatCounter[idx][indicator[idx]] += 1;
         indicator[idx] += 1;
-        overflow -= ColSpan;
+        space -= colSpan;
       }
 
       fillRemainderSpace();
@@ -309,10 +324,10 @@ class VirtualShelf {
 
     // 反向计算
     // 从高到低，从下往上
-    const ColSpan = [ColSpan2, ColSpan1];
+    const colSpan = [colSpan2, colSpan1];
 
-    ColSpanCount.reverse().map((group, i) => {
-      const ColSpanReverse = ColSpan[i].reverse();
+    productColSpanRepeatCounter.reverse().map((group, i) => {
+      const ColSpanReverse = colSpan[i].reverse();
       group.reverse().map((count, k) => {
         for (let time = 0; time < count; time++) {
           _pushItem(ColSpanReverse[k]);
@@ -344,8 +359,8 @@ class VirtualShelf {
   }
 }
 
-export default async function CreateVirtualShelf(cargolist, TemplateID = 1) {
-  return new VirtualShelf(cargolist, TemplateID).init();
+export default async function CreateVirtualShelf(cargolist, templateID = 1) {
+  return new VirtualShelf(cargolist, templateID).init();
 }
 
 function setImageInfo(el, image) {
