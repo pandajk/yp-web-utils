@@ -337,7 +337,10 @@ class VirtualShelf {
 
     function _pushItem(elem, repeat) {
       for (let row = 0; row < PAGE_ROW; row++) {
-        if (columns[row] < ROW_SIZE) {
+        if (
+          columns[row] < ROW_SIZE &&
+          columns[row] + elem.ColSpan <= ROW_SIZE
+        ) {
           screen[row].push(
             Object.assign({}, elem, {
               RowIndex: row,
